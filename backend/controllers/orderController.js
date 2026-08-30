@@ -1,9 +1,7 @@
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
-import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
+// placing user order for frontend
 const placeOrder = async (req, res) => {
   try {
     const newOrder = new orderModel({
@@ -15,28 +13,7 @@ const placeOrder = async (req, res) => {
     await newOrder.save();
     await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
 
-    const line_items = req.body.items.map((item) => ({
-      product_line_item: {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: item.name,
-          },
-          unit_amount: item.price * 100,
-        },
-        quantity: item.quantity,
-      },
-    }));
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: line_items,
-      mode: "payment",
-      success_url: `https://food-delivery-frontend-s2l9.onrender.com/verify?success=true&orderId=${newOrder._id}`,
-      cancel_url: `https://food-delivery-frontend-s2l9.onrender.com/verify?success=false&orderId=${newOrder._id}`,
-    });
-
-    res.json({ success: true, session_url: session.url });
+    res.json({ success: true, session_url: null });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });

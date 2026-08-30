@@ -18,8 +18,6 @@ Developed a full-stack Food Delivery Application featuring a Customer Frontend, 
 - **Admin Panel**:
     - Created a dedicated dashboard for managing the food catalog (Add/Remove items).
     - Implemented an order management system to track and update delivery statuses.
-- **Payment Flow**:
-    - Simplified the payment process by removing Stripe dependencies to streamline the user experience.
+- 
 
-## Changes
-- **Stripe Removal**: Removed all Stripe-related dependencies, backend logic, and frontend redirection to simplify the payment flow.
+
