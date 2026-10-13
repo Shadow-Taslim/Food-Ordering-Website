@@ -51,6 +51,27 @@ if (count === 0) {
 } else {
   console.log(`[preview] foods collection already has ${count} items`);
 }
+
+// seed demo accounts when there are no users yet
+const { default: userModel } = await import("./models/userModel.js");
+const userCount = await userModel.countDocuments();
+if (userCount === 0) {
+  const bcrypt = (await import("bcrypt")).default;
+  const salt = await bcrypt.genSalt(Number(process.env.SALT));
+  await userModel.create({
+    name: "Demo Admin",
+    email: "admin@demo.com",
+    password: await bcrypt.hash("admin123", salt),
+    role: "admin",
+  });
+  await userModel.create({
+    name: "Demo Customer",
+    email: "customer@demo.com",
+    password: await bcrypt.hash("customer123", salt),
+    role: "user",
+  });
+  console.log("[preview] seeded demo accounts: admin@demo.com / customer@demo.com");
+}
 await mongoose.disconnect();
 
 await import("./server.js");
