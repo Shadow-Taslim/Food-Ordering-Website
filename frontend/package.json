@@ -16,7 +16,9 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.25.1",
     "react-toastify": "^10.0.5",
-    "tomato-food-delivery-root": "file:.."
+    "tomato-food-delivery-root": "file:..",
+    "@stripe/react-stripe-js": "^2.8.0",
+    "@stripe/stripe-js": "^4.4.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

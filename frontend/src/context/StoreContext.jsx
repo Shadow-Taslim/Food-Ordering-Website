@@ -6,7 +6,11 @@ export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
-  const url = "http://localhost:4000";
+  // API base URL: env override > dev default (vite on 5173 -> backend on 4000)
+  // > same-origin (all-in-one Docker/preview deployment)
+  const url =
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? "http://localhost:4000" : "");
   const [token, setToken] = useState("");
   const [food_list, setFoodList] = useState([]);
 
