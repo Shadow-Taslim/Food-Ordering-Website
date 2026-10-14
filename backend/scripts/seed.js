@@ -1,4 +1,4 @@
-// Seed script — populates MongoDB with the 32 TOMATO menu items and copies
+// Seed script — populates MongoDB with the 32 demo menu items and copies
 // their images into backend/uploads/ so /images/<file> serves them.
 // Usage: node scripts/seed.js   (requires MONGO_URL in backend/.env)
 import mongoose from "mongoose";
