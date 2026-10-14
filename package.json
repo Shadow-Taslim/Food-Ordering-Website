@@ -1,7 +1,7 @@
 {
-  "name": "tomato-food-delivery-root",
+  "name": "food-ordering-website-root",
   "version": "1.0.0",
-  "description": "Root project to start all services for Tomato food delivery locally",
+  "description": "Root project to start all services for the Food Ordering Website locally",
   "main": "index.js",
   "scripts": {
     "install:all": "npm install && npm install --prefix backend && npm install --prefix admin && npm install --prefix frontend",

@@ -1,4 +1,4 @@
-# TOMATO — Food Ordering Website
+# Food Ordering Website
 
 A dynamic, single-merchant food ordering and delivery web application built with the **MERN stack** (MongoDB, Express, React, Node.js). Customers browse the menu, manage a persistent cart, and pay by card through **Stripe**; restaurant staff manage the menu and the order pipeline from a separate **Admin Panel**.
 
