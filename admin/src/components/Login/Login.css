@@ -5,7 +5,7 @@
     display: grid; 
 }
 .login-popup-container{
-    border: 1px solid tomato;
+    border: 1px solid #ff6347;
     place-self: start center;
     width:max(23vw,330px);
     color: #808080;
@@ -41,7 +41,7 @@
     padding: 10px;
     border-radius: 4px;
     color: white;
-    background-color: tomato;
+    background-color: #ff6347;
     font-size: 15px;
     cursor: pointer;
 }
