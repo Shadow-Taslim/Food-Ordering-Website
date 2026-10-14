@@ -1,0 +1,2 @@
+[Stripe webhook] received event: payment_intent.succeeded
+[Stripe webhook] payment_intent.succeeded pi_demo_sandbox_001 -> order 6ace32752f51ab55b4386cb4 marked PAID

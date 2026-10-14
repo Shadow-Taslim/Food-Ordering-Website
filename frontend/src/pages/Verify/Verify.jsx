@@ -7,7 +7,9 @@ import { toast } from "react-toastify";
 
 const Verify = () => {
     const [searchParams,setSearchParams]=useSearchParams();
-    const success=searchParams.get("success");
+    // Stripe redirects back with redirect_status; keep "success" for legacy links
+    const redirectStatus=searchParams.get("redirect_status");
+    const success=searchParams.get("success") ?? (redirectStatus === "succeeded" ? "true" : "false");
     const orderId=searchParams.get("orderId");
     const {url} =useContext(StoreContext);
     const navigate= useNavigate();
@@ -18,7 +20,7 @@ const Verify = () => {
             navigate("/myorders");
             toast.success("Order Placed Successfully");
         }else{
-            toast.error("Something went wrong");
+            toast.error("Payment was not completed");
             navigate("/");
         }
     }

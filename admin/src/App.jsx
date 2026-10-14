@@ -10,7 +10,10 @@ import "react-toastify/dist/ReactToastify.css";
 import Login from "./components/Login/Login";
 
 const App = () => {
-  const url = "http://localhost:4000";
+  // API base URL: env override > dev default > same-origin (all-in-one Docker)
+  const url =
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? "http://localhost:4000" : "");
   return (
     <div>
       <ToastContainer />

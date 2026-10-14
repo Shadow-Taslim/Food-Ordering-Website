@@ -4,12 +4,59 @@ import { StoreContext } from "../../context/StoreContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from 'react-router-dom'
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+
+// Card form rendered once the backend has created the PaymentIntent.
+// confirmPayment redirects back to /verify, where the order state is confirmed
+// (the Stripe webhook on the server is the authoritative paid-state updater).
+const PaymentForm = ({ orderId }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+
+  const payNow = async (event) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+    setProcessing(true);
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/verify?orderId=${orderId}`,
+      },
+    });
+    // confirmPayment only returns here if the redirect did not happen (error)
+    if (error) {
+      toast.error(error.message || "Payment failed");
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={payNow} className="payment-form">
+      <p className="title">Card Payment</p>
+      <PaymentElement />
+      <button type="submit" disabled={!stripe || processing}>
+        {processing ? "PROCESSING..." : "PAY NOW"}
+      </button>
+    </form>
+  );
+};
 
 const PlaceOrder = () => {
   const navigate= useNavigate();
 
   const { getTotalCartAmount, token, food_list, cartItems, url } =
     useContext(StoreContext);
+  const [payment, setPayment] = useState(null); // { clientSecret, orderId }
   const [data, setData] = useState({
     firstName: "",
     lastName: "",
@@ -43,12 +90,12 @@ const PlaceOrder = () => {
       items: orderItems,
       amount: getTotalCartAmount() + 2,
     };
-    
+
     let response= await axios.post(url+"/api/order/place",orderData,{headers:{token}});
-    if(response.data.success){
-      navigate("/verify?success=true");
+    if(response.data.success && response.data.clientSecret){
+      setPayment({ clientSecret: response.data.clientSecret, orderId: response.data.orderId });
     }else{
-      toast.error("Errors!")
+      toast.error(response.data.message || "Errors!")
     }
   };
 
@@ -62,6 +109,28 @@ const PlaceOrder = () => {
       navigate("/cart")
     }
   },[token])
+
+  // step 2: payment step once the PaymentIntent exists
+  if (payment) {
+    if (!stripePromise) {
+      return (
+        <div className="place-order">
+          <p className="title">
+            Stripe publishable key is not configured. Set
+            VITE_STRIPE_PUBLISHABLE_KEY in frontend/.env and restart Vite.
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="place-order">
+        <Elements stripe={stripePromise} options={{ clientSecret: payment.clientSecret }}>
+          <PaymentForm orderId={payment.orderId} />
+        </Elements>
+      </div>
+    );
+  }
+
   return (
     <form className="place-order" onSubmit={placeOrder}>
       <div className="place-order-left">
