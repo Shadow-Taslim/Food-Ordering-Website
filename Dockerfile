@@ -5,7 +5,7 @@ WORKDIR /app
 
 # ---- dependencies (cached layer) ----
 # root package.json is required: the sub-packages declare
-# "tomato-food-delivery-root": "file:.." as a dependency
+# "food-ordering-website-root": "file:.." as a dependency
 COPY package.json ./
 COPY backend/package*.json backend/
 RUN cd backend && npm install

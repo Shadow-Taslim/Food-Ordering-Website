@@ -4,6 +4,13 @@
     align-items: center;
     padding: 8px 4%;
 }
+.navbar .logo-text{
+    font-size:22px;
+    font-weight:600;
+    color:#ff6347;
+    letter-spacing:0.5px;
+    margin:0;
+}
 .navbar .logo{
     width: max(10%,80px);
 }
