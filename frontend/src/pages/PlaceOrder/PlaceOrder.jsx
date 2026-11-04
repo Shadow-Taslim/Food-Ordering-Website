@@ -3,7 +3,7 @@ import "./PlaceOrder.css";
 import { StoreContext } from "../../context/StoreContext";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -14,11 +14,12 @@ import {
 
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+const DELIVERY_FEE = 2;
 
 // Card form rendered once the backend has created the PaymentIntent.
 // confirmPayment redirects back to /verify, where the order state is confirmed
 // (the Stripe webhook on the server is the authoritative paid-state updater).
-const PaymentForm = ({ orderId }) => {
+const PaymentForm = ({ orderId, total, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -41,18 +42,66 @@ const PaymentForm = ({ orderId }) => {
   };
 
   return (
-    <form onSubmit={payNow} className="payment-form">
-      <p className="title">Card Payment</p>
-      <PaymentElement />
-      <button type="submit" disabled={!stripe || processing}>
-        {processing ? "PROCESSING..." : "PAY NOW"}
+    <form onSubmit={payNow} className="checkout-pay">
+      <div className="checkout-pay-header">
+        <p className="title">Pay with</p>
+        <button type="button" className="back-link" onClick={onBack}>
+          ← Edit delivery info
+        </button>
+      </div>
+      <div className="payment-element-card">
+        {/* Stripe renders wallet tabs (Link / Apple Pay / Google Pay) here
+            automatically when the browser supports them */}
+        <PaymentElement options={{ layout: "tabs" }} />
+      </div>
+      <button className="pay-btn" type="submit" disabled={!stripe || processing}>
+        {processing ? "Processing…" : `Pay $${total}`}
       </button>
+      <p className="secure-note">
+        Payments are encrypted and processed securely by Stripe. Test card:
+        4242 4242 4242 4242, any future date, any CVC.
+      </p>
     </form>
   );
 };
 
+// Right-hand summary sidebar shown on the payment step.
+const OrderSummary = ({ items, subtotal }) => (
+  <aside className="checkout-summary">
+    <h2>Order summary</h2>
+    <div className="summary-items">
+      {items.map((item) => (
+        <div className="summary-item" key={item._id}>
+          <p className="summary-item-name">
+            {item.name} <span>× {item.quantity}</span>
+          </p>
+          <p className="summary-item-price">${item.price * item.quantity}</p>
+        </div>
+      ))}
+    </div>
+    <hr />
+    <div className="cart-total-details">
+      <p>Subtotal</p>
+      <p>${subtotal}</p>
+    </div>
+    <div className="cart-total-details">
+      <p>Delivery fee</p>
+      <p>${subtotal === 0 ? 0 : DELIVERY_FEE}</p>
+    </div>
+    <hr />
+    <div className="cart-total-details summary-grand">
+      <b>Total due</b>
+      <b>${subtotal === 0 ? 0 : subtotal + DELIVERY_FEE}</b>
+    </div>
+    <p className="summary-note">
+      Your order is confirmed the moment Stripe verifies the payment — you can
+      track it afterwards from the My Orders page.
+    </p>
+  </aside>
+);
+
 const PlaceOrder = () => {
-  const navigate= useNavigate();
+  const navigate = useNavigate();
 
   const { getTotalCartAmount, token, food_list, cartItems, url } =
     useContext(StoreContext);
@@ -69,6 +118,18 @@ const PlaceOrder = () => {
     phone: "",
   });
 
+  const getOrderItems = () => {
+    let orderItems = [];
+    food_list.map((item) => {
+      if (cartItems[item._id] > 0) {
+        let itemInfo = { ...item };
+        itemInfo["quantity"] = cartItems[item._id];
+        orderItems.push(itemInfo);
+      }
+    });
+    return orderItems;
+  };
+
   const onChangeHandler = (event) => {
     const name = event.target.name;
     const value = event.target.value;
@@ -77,38 +138,35 @@ const PlaceOrder = () => {
 
   const placeOrder = async (event) => {
     event.preventDefault();
-    let orderItems = [];
-    food_list.map((item) => {
-      if (cartItems[item._id] > 0) {
-        let itemInfo = item;
-        itemInfo["quantity"] = cartItems[item._id];
-        orderItems.push(itemInfo);
-      }
-    });
     let orderData = {
       address: data,
-      items: orderItems,
-      amount: getTotalCartAmount() + 2,
+      items: getOrderItems(),
+      amount: getTotalCartAmount() + DELIVERY_FEE,
     };
 
-    let response= await axios.post(url+"/api/order/place",orderData,{headers:{token}});
-    if(response.data.success && response.data.clientSecret){
-      setPayment({ clientSecret: response.data.clientSecret, orderId: response.data.orderId });
-    }else{
-      toast.error(response.data.message || "Errors!")
+    let response = await axios.post(url + "/api/order/place", orderData, {
+      headers: { token },
+    });
+    if (response.data.success && response.data.clientSecret) {
+      setPayment({
+        clientSecret: response.data.clientSecret,
+        orderId: response.data.orderId,
+      });
+      window.scrollTo(0, 0);
+    } else {
+      toast.error(response.data.message || "Errors!");
     }
   };
 
-  useEffect(()=>{
-    if(!token){
-      toast.error("Please Login first")
-      navigate("/cart")
-    }
-    else if(getTotalCartAmount()===0){
+  useEffect(() => {
+    if (!token) {
+      toast.error("Please Login first");
+      navigate("/cart");
+    } else if (getTotalCartAmount() === 0) {
       toast.error("Please Add Items to Cart");
-      navigate("/cart")
+      navigate("/cart");
     }
-  },[token])
+  }, [token]);
 
   // step 2: payment step once the PaymentIntent exists
   if (payment) {
@@ -122,11 +180,20 @@ const PlaceOrder = () => {
         </div>
       );
     }
+    const subtotal = getTotalCartAmount();
     return (
-      <div className="place-order">
-        <Elements stripe={stripePromise} options={{ clientSecret: payment.clientSecret }}>
-          <PaymentForm orderId={payment.orderId} />
+      <div className="checkout">
+        <Elements
+          stripe={stripePromise}
+          options={{ clientSecret: payment.clientSecret }}
+        >
+          <PaymentForm
+            orderId={payment.orderId}
+            total={subtotal === 0 ? 0 : subtotal + DELIVERY_FEE}
+            onBack={() => setPayment(null)}
+          />
         </Elements>
+        <OrderSummary items={getOrderItems()} subtotal={subtotal} />
       </div>
     );
   }
@@ -225,13 +292,13 @@ const PlaceOrder = () => {
             <hr />
             <div className="cart-total-details">
               <p>Delivery Fee</p>
-              <p>${getTotalCartAmount() === 0 ? 0 : 2}</p>
+              <p>${getTotalCartAmount() === 0 ? 0 : DELIVERY_FEE}</p>
             </div>
             <hr />
             <div className="cart-total-details">
               <b>Total</b>
               <b>
-                ${getTotalCartAmount() === 0 ? 0 : getTotalCartAmount() + 2}
+                ${getTotalCartAmount() === 0 ? 0 : getTotalCartAmount() + DELIVERY_FEE}
               </b>
             </div>
           </div>
