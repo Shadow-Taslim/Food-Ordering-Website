@@ -10,7 +10,6 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Verify from "./pages/Verify/Verify";
 import MyOrders from "./pages/MyOrders/MyOrders";
-import { Analytics } from "@vercel/analytics/react";
 
 const App = () => {
   const [showLogin, setShowLogin] = useState(false);
@@ -29,7 +28,6 @@ const App = () => {
         </Routes>
       </div>
       <Footer />
-      <Analytics />
     </>
   );
 };
